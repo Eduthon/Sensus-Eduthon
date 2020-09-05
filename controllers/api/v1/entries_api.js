@@ -160,3 +160,26 @@ module.exports.findByDate = async function (req, res) {
     return res.status(500).json({ message: err });
   }
 };
+
+module.exports.delete = async function (req, res) {
+  try {
+    let entryId = ObjectId(req.body.entryId);
+    let userId = ObjectId(req.body.userId);
+
+    await Entry.findByIdAndDelete(entryId, async (err) => {
+      if (err) {
+        console.log(err);
+      } else {
+        let current = await User.findById(userId);
+        console.log(current);
+
+        current.entries.pull(entryId);
+
+        current.save();
+      }
+    });
+    return res.status(200).json({ message: "deleted entry" });
+  } catch (err) {
+    return res.status(500).json({ message: err });
+  }
+};
