@@ -3,20 +3,50 @@ const User = require("../../../models/user");
 const SentimentApi = require("../../sentimentAPI");
 const ObjectId = require("mongodb").ObjectID;
 
-sort_entry_array_datestring = (entries) => {
-  for (var i=0; i<entries.length; i++){
-    var dateParts = entries[i]["createDate"].split("/");
-    var dateObject = new Date(+dateParts[2], dateParts[1] - 1, +dateParts[0]); 
-    entries[i]["createDate"] = dateObject
+// sort_entry_array_datestring = (entries) => {
+//   for (var i=0; i<entries.length; i++){
+//     var dateParts = entries[i]["createDate"].split("/");
+//     var dateObject = new Date(+dateParts[2], dateParts[1] - 1, +dateParts[0]);
+//     entries[i]["createDate"] = dateObject
+//   }
+//   entries.sort(function(a,b){
+//     return (new Date(b.createDate) - new Date(a.createDate));
+//   });
+//   for (var i=0; i<entries.length; i++){
+//     entries[i]["createDate"] = new Date(entries[i]["createDate"]).toLocaleDateString();
+//   }
+//   return entries;
+// }
+
+// change_createdAt_using_createDate = (entry) => {
+
+//   let newDate = new Date(entry.createDate);
+//   entry.createdAt = newDate;
+
+//   entry.save();
+
+//   return entry;
+// }
+
+module.exports.updateDate = async function (req, res) {
+  try {
+    let entries = await Entry.find({}, (err) => {
+      if (err) {
+        console.log(err);
+      }
+    });
+
+    entries.forEach((element) => {
+      element.createdAt = new Date(element.createDate);
+
+      element.save();
+    });
+
+    return res.status(200).json({ message: "Done", updatedEntries: entries });
+  } catch (err) {
+    return res.status(500).json({ messgae: err });
   }
-  entries.sort(function(a,b){
-    return (new Date(b.createDate) - new Date(a.createDate));
-  });
-  for (var i=0; i<entries.length; i++){
-    entries[i]["createDate"] = new Date(entries[i]["createDate"]).toLocaleDateString();
-  }
-  return entries;
-}
+};
 
 module.exports.index = async function (req, res) {
   try {
@@ -33,7 +63,11 @@ module.exports.index = async function (req, res) {
           console.log(err);
           return err;
         }
-        // console.log(docs);
+        // user_entries = sort_entry_array_datestring(docs);
+        // user_entries.forEach((element, index) => {
+        //   user_entries[index] = change_createdAt_using_createDate(element);
+        // });
+        console.log(docs);
         return res.status(200).json(docs);
       });
   } catch (err) {
@@ -78,7 +112,7 @@ module.exports.createUpdate = async function (req, res) {
       score = 0,
       magnitude = 0;
     let mode; //Update or create (U or C respectively)
-    if (text.length >= 8) {
+    if (text.length >= 4) {
       console.log("analyzing");
 
       let get_sentiment = await SentimentApi.analyze(text);
